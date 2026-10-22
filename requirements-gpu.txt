@@ -1,0 +1,3 @@
+-r requirements.txt
+nvidia-cublas-cu12>=12,<13
+nvidia-cudnn-cu12>=9,<10
