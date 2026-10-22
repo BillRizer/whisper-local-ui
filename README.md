@@ -1,4 +1,5 @@
 # Whisper Local
+<img width="1536" height="932" alt="image" src="https://github.com/user-attachments/assets/955ebe3c-abc8-4dc6-a615-04b233be4d5d" />
 
 Interface pequena para transcrever áudio e vídeo, gravar pelo microfone e traduzir fala para inglês usando modelos Whisper **no próprio computador**. Não usa a API da OpenAI nem exige chave. A primeira utilização de cada modelo baixa os pesos do Hugging Face; depois, os modelos em cache podem funcionar sem internet.
 
