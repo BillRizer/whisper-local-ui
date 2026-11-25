@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f5">
+  <title>Whisper Local — áudio em texto</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <main class="app-layout">
+      <div class="workspace-area">
+        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-controls="history-sidebar" aria-expanded="true" aria-label="Ocultar menu lateral">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+          <span id="sidebar-toggle-label">Ocultar menu</span>
+        </button>
+        <div class="workspace-grid">
+        <section class="panel input-panel" aria-labelledby="create-title">
+          <div class="panel-heading">
+            <div><div class="step-label">01 / ENTRADA</div><h2 id="create-title">Novo trabalho</h2></div>
+            <span class="panel-hint">Comece por aqui</span>
+          </div>
+
+          <div class="source-tabs" role="tablist" aria-label="Fonte do áudio">
+            <button id="tab-files" class="source-tab active" type="button" role="tab" aria-selected="true" aria-controls="source-files">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h10l5 5v10A1.5 1.5 0 0 1 17.5 21h-12A1.5 1.5 0 0 1 4 19.5z"/><path d="M14 4.5v5h5"/><path d="M8 15h8M8 18h5"/></svg> Arquivos
+            </button>
+            <button id="tab-mic" class="source-tab" type="button" role="tab" aria-selected="false" aria-controls="source-mic">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8.5 21h7"/></svg> Microfone
+            </button>
+          </div>
+
+          <div id="source-files" role="tabpanel" aria-labelledby="tab-files">
+            <input id="file-input" type="file" multiple accept="audio/*,video/*,.mp3,.mp4,.m4a,.m4v,.wav,.flac,.ogg,.oga,.opus,.webm,.mov,.mkv,.avi,.aac,.aiff,.wma,.mpeg,.mpga" hidden>
+            <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Escolher ou soltar arquivos de áudio ou vídeo">
+              <div class="upload-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4"/><path d="M4 15.5v3A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-3"/></svg></div>
+              <strong>Arraste seus arquivos aqui</strong>
+              <span>ou <b>escolha no computador</b></span>
+              <small>Áudio e vídeo · até 20 arquivos · 1 GB cada</small>
+            </div>
+          </div>
+
+          <div id="source-mic" role="tabpanel" aria-labelledby="tab-mic" hidden>
+            <div class="mic-box" id="mic-box">
+              <div class="mic-visual" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+              <strong id="mic-title">Pronto para gravar</strong>
+              <p id="mic-description">Use o microfone para notas rápidas, reuniões ou ideias.</p>
+              <div class="mic-actions">
+                <button id="record-button" type="button" class="record-button"><span></span> Iniciar gravação</button>
+                <span id="record-timer" class="record-timer" aria-live="off">00:00</span>
+              </div>
+              <audio id="record-preview" controls hidden></audio>
+            </div>
+          </div>
+
+          <div id="file-list" class="file-list" aria-live="polite" hidden></div>
+
+          <div class="form-divider"></div>
+          <fieldset class="task-group">
+            <legend>O que deseja fazer?</legend>
+            <div class="task-options">
+              <label class="task-option selected" id="option-transcribe"><input type="radio" name="task" value="transcribe" checked><span class="task-radio"></span><span><strong>Transcrever</strong><small>No idioma original</small></span></label>
+              <label class="task-option" id="option-translate"><input type="radio" name="task" value="translate"><span class="task-radio"></span><span><strong>Traduzir</strong><small>Para inglês</small></span></label>
+            </div>
+          </fieldset>
+
+          <div class="settings-grid">
+            <label class="field"><span>Idioma do áudio</span><select id="language-select">
+              <option value="auto">Detectar automaticamente</option><option value="pt">Português</option><option value="en">Inglês</option><option value="es">Espanhol</option><option value="fr">Francês</option><option value="de">Alemão</option><option value="it">Italiano</option><option value="ja">Japonês</option><option value="zh">Chinês</option><option value="ko">Coreano</option><option value="ru">Russo</option><option value="ar">Árabe</option><option value="hi">Hindi</option><option value="nl">Holandês</option><option value="pl">Polonês</option><option value="tr">Turco</option><option value="uk">Ucraniano</option><option value="sv">Sueco</option><option value="id">Indonésio</option><option value="vi">Vietnamita</option>
+            </select></label>
+            <label class="field"><span>Modelo</span><select id="model-select">
+              <option value="tiny">Tiny · mais rápido</option><option value="base">Base · leve</option><option value="small" selected>Small · equilibrado</option><option value="medium">Medium · preciso</option><option value="large-v3">Large v3 · máxima precisão</option>
+            </select></label>
+          </div>
+          <section class="model-memory" aria-labelledby="model-memory-title">
+            <div class="model-memory-heading"><strong id="model-memory-title">Modelo na memória</strong><span id="model-memory-status" role="status">Verificando…</span></div>
+            <div class="model-memory-controls">
+              <label class="field" for="idle-unload-select"><span>Descarregar após inatividade</span><select id="idle-unload-select" disabled>
+                <option value="0">Nunca</option><option value="1">1 minuto</option><option value="5">5 minutos</option><option value="10">10 minutos</option><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">60 minutos</option>
+              </select></label>
+              <button id="unload-model-button" type="button" class="model-unload-button" disabled>Descarregar agora</button>
+            </div>
+          </section>
+          <details class="advanced"><summary>Opções avançadas <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><label class="field"><span>Contexto ou nomes próprios <small>(opcional)</small></span><textarea id="prompt-input" maxlength="1000" rows="2" placeholder="Ex.: entrevista sobre astronomia; nomes: Ana, Copérnico…"></textarea></label><p>Uma pista curta ajuda o modelo com termos específicos.</p></details>
+
+          <button id="submit-button" class="primary-button" type="button" disabled><span>Transcrever arquivos</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button>
+          <p class="submit-note" id="model-note">O modelo é baixado uma vez; depois o processamento funciona localmente.</p>
+        </section>
+
+        <section class="panel result-panel" aria-labelledby="result-title">
+          <div class="panel-heading result-heading">
+            <div><div class="step-label">02 / RESULTADO</div><h2 id="result-title">Sua transcrição</h2></div>
+            <button id="copy-button" type="button" class="icon-text-button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg> Copiar</button>
+          </div>
+          <div id="result-empty" class="result-empty">
+            <div class="empty-art" aria-hidden="true"><div class="empty-circle"><span class="empty-wave">▁▃▆▂▇▅▂▅▃▁</span></div><span class="empty-spark spark-one">✦</span><span class="empty-spark spark-two">✧</span></div>
+            <h3>Suas palavras aparecem aqui</h3>
+            <p>Adicione um arquivo ou grave com o microfone para começar.</p>
+          </div>
+          <div id="result-content" class="result-content" hidden>
+            <div class="result-meta"><div><span id="result-status" class="status-badge"></span><strong id="result-name"></strong></div><span id="result-details"></span></div>
+            <div id="result-progress" class="result-progress" hidden><div class="progress-track"><span id="result-progress-bar"></span></div><p id="result-progress-message"></p></div>
+            <div id="result-error" class="result-error" hidden></div>
+            <div id="result-ready" hidden>
+              <div class="view-tabs" role="tablist" aria-label="Visualização do resultado"><button id="view-text" class="view-tab active" type="button" aria-selected="true">Texto corrido</button><button id="view-segments" class="view-tab" type="button" aria-selected="false">Com horários</button></div>
+              <div id="transcript-text" class="transcript-body"></div>
+              <div id="transcript-segments" class="transcript-body segments-body" hidden></div>
+              <div class="download-row"><span>BAIXAR COMO</span><button type="button" data-download="txt">TXT</button><button type="button" data-download="srt">SRT</button><button type="button" data-download="vtt">VTT</button><button type="button" data-download="json">JSON</button></div>
+            </div>
+          </div>
+        </section>
+        </div>
+      </div>
+
+      <aside id="history-sidebar" class="history-sidebar" aria-labelledby="history-title">
+        <div class="sidebar-top">
+          <a class="brand" href="/" aria-label="Whisper Local, início">
+            <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+            <span class="brand-name">whisper<span class="brand-dot">.</span><small>LOCAL</small></span>
+          </a>
+          <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Fechar menu lateral">×</button>
+        </div>
+        <div class="sidebar-status">
+          <span class="privacy-note"><span class="privacy-dot"></span> Processamento local</span>
+          <span class="device-pill" id="device-pill"><span class="device-light"></span><span id="device-label">Verificando dispositivo</span></span>
+        </div>
+        <div class="history-heading">
+          <h2 id="history-title">Histórico</h2>
+          <span id="job-count" class="history-count">0</span>
+        </div>
+        <nav id="history-list" class="history-list" aria-label="Histórico">
+          <div class="history-empty">Nenhum trabalho ainda. Seus resultados salvos aparecem aqui.</div>
+        </nav>
+        <div class="history-actions">
+          <select id="batch-format" aria-label="Formato para baixar todos"><option value="txt">TXT</option><option value="srt">SRT</option><option value="vtt">VTT</option><option value="json">JSON</option></select>
+          <a id="batch-download" class="secondary-button disabled" href="#" aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg> Baixar todos</a>
+        </div>
+      </aside>
+      <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Fechar menu lateral" hidden></button>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
