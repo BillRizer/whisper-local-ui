@@ -1,17 +1,30 @@
 # Whisper Local
-<img width="1536" height="932" alt="image" src="https://github.com/user-attachments/assets/955ebe3c-abc8-4dc6-a615-04b233be4d5d" />
 
-Interface pequena para transcrever áudio e vídeo, gravar pelo microfone e traduzir fala para inglês usando modelos Whisper **no próprio computador**. Não usa a API da OpenAI nem exige chave. A primeira utilização de cada modelo baixa os pesos do Hugging Face; depois, os modelos em cache podem funcionar sem internet.
+A local web interface for transcribing audio and video, recording from a microphone, and translating speech into English with Whisper. Export the transcription or English translation as TXT, SRT, VTT, or JSON. Processing runs on your computer: no OpenAI API or API key is required. Model weights are downloaded from Hugging Face on first use and can then be reused from cache.
 
-## Iniciar
+I built this to make it easier for my wife to turn videos and audio into text, with the idea of making it available on our local network. Now she can feed it recordings and make my GPU cry—out of love, of course.
 
-Requer Python 3.10+ e um navegador recente. No Linux:
+![Whisper Local running with a completed transcription](docs/images/whisper-local.png)
+
+**Network access:** the launcher listens on `127.0.0.1` by default. See [Local network access](#local-network-access) for the opt-in setting and its security implications.
+
+## Requirements
+
+- Python 3.10 or newer and a modern browser.
+- Linux for `run.sh`; manual setup is available on other platforms.
+- Optional: an NVIDIA GPU with a working driver, CUDA 12 cuBLAS, and cuDNN 9.
+
+## Install and run
+
+On Linux, clone the repository, enter its directory, and run:
 
 ```bash
 ./run.sh
 ```
 
-Abra **http://127.0.0.1:7860**. Para instalar manualmente ou em outros sistemas:
+The script creates `.venv`, installs the required dependencies, and starts the server at [http://127.0.0.1:7860](http://127.0.0.1:7860).
+
+For manual setup:
 
 ```bash
 python3 -m venv .venv
@@ -19,82 +32,99 @@ python3 -m venv .venv
 .venv/bin/python -m uvicorn whisper_ui.app:app --host 127.0.0.1 --port 7860
 ```
 
-No Windows, ative o ambiente virtual com `.venv\Scripts\activate` e execute `python -m uvicorn whisper_ui.app:app --host 127.0.0.1 --port 7860`.
+On Windows, create the virtual environment with `python -m venv .venv`, activate it with `.venv\Scripts\activate`, install dependencies with `python -m pip install -r requirements.txt`, and run `python -m uvicorn whisper_ui.app:app --host 127.0.0.1 --port 7860`.
 
-## Usar
+## Local network access
 
-1. Arraste até 20 arquivos de áudio ou vídeo, ou grave com o microfone.
-2. Escolha **Transcrever** (idioma original) ou **Traduzir** (inglês).
-3. Selecione idioma de entrada e modelo. O padrão **small** equilibra qualidade e velocidade; **large-v3** melhora a qualidade e precisa de mais memória. O primeiro download de **large-v3** tem cerca de 2,9 GB e pode levar alguns minutos; o andamento aparece no resultado.
-4. Acompanhe a fila, copie o texto ou baixe TXT, SRT, VTT e JSON. **Baixar todos** cria um ZIP com todos os resultados concluídos.
-
-Em **Modelo na memória**, use **Descarregar agora** para liberar os pesos do modelo carregado. Se houver trabalhos em andamento ou na fila, o descarregamento acontece depois deles. O seletor permite descarregar automaticamente após 1, 5, 10, 15, 30 ou 60 minutos de inatividade, ou escolher **Nunca**. O padrão é 15 minutos e a escolha fica salva em `data/settings.json`. A próxima transcrição carrega o modelo novamente do cache em disco, sem repetir o download. O contexto CUDA pode continuar ocupando uma pequena parte da VRAM mesmo após liberar os pesos.
-
-Formatos aceitos: MP3, MP4, M4A, M4V, WAV, FLAC, OGG, OGA, OPUS, WEBM, MOV, MKV, AVI, AAC, AIFF, WMA, MPEG e MPGA. O arquivo precisa conter uma faixa de áudio decodificável. Cada arquivo pode ter até 1 GB. A gravação no navegador funciona em `localhost` e pede permissão para usar o microfone.
-
-O processamento usa uma fila para manter a interface responsiva. Os arquivos enviados pelo navegador são apagados depois do processamento; arquivos locais indicados via MCP são preservados. Resultados concluídos ficam em `data/results/` para aparecer no histórico após reiniciar; podem ser removidos pela interface. O servidor aceita conexões apenas de `127.0.0.1` por padrão.
-
-## Usar com Codex ou Claude Code (MCP)
-
-Inicie `./run.sh` e deixe o servidor aberto. O mesmo processo atende a interface e o endpoint **Streamable HTTP** em `http://127.0.0.1:7860/mcp`, compartilhando fila, modelo e histórico. Registre o servidor no cliente local:
+To listen on all IPv4 interfaces, start the Linux launcher with:
 
 ```bash
-codex mcp add whisper-local --url http://127.0.0.1:7860/mcp
-claude mcp add --transport http whisper-local http://127.0.0.1:7860/mcp
+HOST=0.0.0.0 ./run.sh
 ```
 
-Esses comandos seguem as instruções oficiais de [Codex](https://developers.openai.com/learn/docs-mcp) e [Claude Code](https://code.claude.com/docs/en/mcp).
+From another device, open `http://<host-local-ip>:7860` using the computer's LAN IP address. `0.0.0.0` is a listening address, not the address to enter in the browser. Use a firewall to restrict access to trusted devices. A remote browser may require HTTPS for microphone recording; file uploads work over HTTP.
 
-Se alterar `PORT`, substitua `7860` nos comandos. Os clientes precisam rodar no mesmo computador que o Whisper Local: as ferramentas recebem o **caminho absoluto** de um arquivo de áudio ou vídeo acessível ao servidor. Por exemplo, peça ao agente: “Transcreva `/home/usuario/Videos/reuniao.mp4` com o Whisper Local e resuma os pontos principais.” Nenhuma chave de API é necessária. O primeiro uso de um modelo ainda pode baixar seus pesos; a transcrição e a tradução são locais.
+**The app has no authentication.** Anyone who can reach the server can access its API and results or submit jobs. The MCP endpoint can read files accessible to the server process when its host validation permits access. Do not expose the server to untrusted networks or the internet; use appropriate network restrictions and access controls. See [architecture](docs/arquitetura.md).
 
-As ferramentas MCP são `transcribe_file` e `translate_file` (criam um trabalho), `get_job` e `wait_for_job` (acompanham o progresso), `read_transcript` (lê o texto em partes), `export_transcript` (salva TXT, SRT, VTT ou JSON em `data/exports/`), `list_jobs` (histórico), `get_model_status`, `unload_model` e `set_model_idle_timeout` (controle de memória). A tradução do Whisper gera texto em inglês. Arquivos enviados por caminho local permanecem no lugar mesmo após o trabalho ou o registro ser removido. Mantenha o servidor restrito a `127.0.0.1`, pois o MCP pode ler arquivos locais que o processo tenha permissão para acessar.
+## Install with an AI assistant
 
-## GPU NVIDIA
+Give an AI coding assistant access to the repository and use this prompt:
 
-O aplicativo escolhe CUDA automaticamente quando o CTranslate2 encontra uma GPU disponível; caso contrário, usa CPU e mostra isso no topo da interface. Para exigir GPU e receber um erro explícito se ela não estiver pronta:
-
-```bash
-WHISPER_DEVICE=cuda ./run.sh
+```text
+Set up and run Whisper Local from this repository. Read the README and any
+repository instructions first. Check the installed Python version, create or
+repair the virtual environment if needed, and install the dependencies.
+If a compatible NVIDIA GPU and driver are available, install the GPU
+requirements as documented. Start the app on 127.0.0.1, verify that it
+responds, and tell me the URL. Explain any missing system dependencies or
+permissions you need. Do not expose the app to the network or download a
+Whisper model without asking me first.
 ```
 
-É preciso ter driver NVIDIA funcional e as bibliotecas **CUDA 12 cuBLAS** e **cuDNN 9**, de acordo com a [documentação do faster-whisper](https://github.com/SYSTRAN/faster-whisper#gpu). O padrão na GPU é `float16` e na CPU é `int8`. Para reduzir consumo de VRAM:
+## Use
 
-```bash
-WHISPER_COMPUTE_TYPE=int8_float16 WHISPER_DEVICE=cuda ./run.sh
-```
+1. Add up to 20 audio or video files, or record from your microphone. Each file can be up to 1 GB.
+2. Choose transcription or English translation, the input language, and the model. `small` is the default; larger models need more memory.
+3. Track jobs in the history. Retry a failed job using its retry icon while the source is available.
+4. Copy the transcript or export TXT, SRT, VTT, or JSON. **Download all** creates a ZIP of completed results.
 
-O `run.sh` encontra automaticamente as bibliotecas CUDA instaladas pelo pip no ambiente virtual ou nos pacotes do usuário e as adiciona ao `LD_LIBRARY_PATH` antes de iniciar Python. Se `libcublas.so.12` ou `libcudnn.so.9` ainda não existirem, instale os pacotes no ambiente virtual:
+Supported extensions: MP3, MP4, M4A, M4V, WAV, FLAC, OGG, OGA, OPUS, WEBM, MOV, MKV, AVI, AAC, AIFF, WMA, MPEG, and MPGA. Files must contain a decodable audio track. Microphone recording requires browser permission and works on localhost.
+
+The model unloads after 15 minutes of inactivity by default. Change the timeout or unload it manually in **Modelo na memória**. CUDA may retain some VRAM for its context after unloading.
+
+Completed results persist in `data/results/`. Successful uploads are deleted; failed uploads are retained for retry until the job is deleted or the server restarts. Failed jobs do not survive a restart. Local files submitted through MCP are never deleted by the application.
+
+## NVIDIA GPU
+
+Check that `nvidia-smi` works, then install the GPU dependencies:
 
 ```bash
 .venv/bin/python -m pip install -r requirements-gpu.txt
 ./run.sh
 ```
 
-Use `./run.sh` para iniciar a versão GPU no Linux; iniciar o `uvicorn` diretamente não configura o caminho dessas bibliotecas. O comando `nvidia-smi` deve funcionar antes de iniciar. Se CUDA não aparecer, confira driver e bibliotecas. Não há envio dos áudios para serviços externos; a conexão usada na primeira carga é apenas para baixar os pesos do modelo.
+Run `./run.sh` once first if the virtual environment does not exist. The launcher adds the installed cuBLAS and cuDNN library directories to `LD_LIBRARY_PATH`; starting Uvicorn directly does not configure these paths. CUDA is selected automatically when available; otherwise, the app uses CPU. To require CUDA or reduce VRAM use:
 
-## Configuração
+```bash
+WHISPER_DEVICE=cuda ./run.sh
+WHISPER_DEVICE=cuda WHISPER_COMPUTE_TYPE=int8_float16 ./run.sh
+```
 
-| Variável | Padrão | Uso |
+See the [faster-whisper GPU requirements](https://github.com/SYSTRAN/faster-whisper#gpu) for driver and library details.
+
+## MCP
+
+With the server running, register its local Streamable HTTP endpoint:
+
+```bash
+codex mcp add whisper-local --url http://127.0.0.1:7860/mcp
+claude mcp add --transport http whisper-local http://127.0.0.1:7860/mcp
+```
+
+Use the configured port if it differs from `7860`. The MCP client must run on the same computer and supply an absolute path accessible to the server. The interface and MCP share the queue, model, and history.
+
+Tools: `transcribe_file`, `translate_file`, `get_job`, `wait_for_job`, `read_transcript`, `export_transcript`, `list_jobs`, `get_model_status`, `unload_model`, and `set_model_idle_timeout`. MCP exports are saved in `data/exports/`.
+
+## Configuration
+
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `PORT` | `7860` | Porta local do servidor com `run.sh` |
-| `WHISPER_DEVICE` | `auto` | `auto`, `cuda` ou `cpu` |
-| `WHISPER_COMPUTE_TYPE` | `float16` na GPU, `int8` na CPU | Precisão e memória do CTranslate2 |
-| `WHISPER_DATA_DIR` | `./data` | Pasta para arquivos temporários e histórico |
-| `HF_HOME` | padrão do Hugging Face | Cache dos modelos |
+| `PORT` | `7860` | HTTP port used by `run.sh` |
+| `HOST` | `127.0.0.1` | Listening address used by `run.sh`; `0.0.0.0` enables IPv4 network access |
+| `WHISPER_DEVICE` | `auto` | `auto`, `cuda`, or `cpu` |
+| `WHISPER_COMPUTE_TYPE` | `float16` on GPU, `int8` on CPU | CTranslate2 compute type |
+| `WHISPER_DATA_DIR` | `./data` | Temporary files, settings, and results |
+| `HF_HOME` | Hugging Face default | Model cache |
 
-Para executar os testes de API e exportação:
+## Development
 
 ```bash
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-## Referências
+See [agent instructions](AGENTS.md), [product requirements](docs/PRD.md), [architecture](docs/arquitetura.md), [tests](docs/testes.md), and [contributing](docs/CONTRIBUTING.md).
 
-- [Whisper da OpenAI](https://openai.com/pt-BR/index/whisper/): reconhecimento multilíngue e tradução de fala para inglês.
-- [Education-Victory/whisper-webui](https://github.com/Education-Victory/whisper-webui): inspiração para idioma opcional, contexto e formatos de exportação. Este projeto usa processamento local em vez da API.
-- [faster-whisper](https://github.com/SYSTRAN/faster-whisper): implementação local usada no processamento.
+## Credits
 
-## Desenvolvimento e governança
-
-As regras para agentes estão em [AGENTS.md](AGENTS.md). Consulte o [PRD](docs/PRD.md), a [arquitetura](docs/arquitetura.md), o [ADR](docs/adr/0001-arquitetura-local.md), a [estratégia de testes](docs/testes.md), os [riscos](docs/riscos.md) e o [guia de contribuição](docs/CONTRIBUTING.md). Os documentos iniciais foram reconstruídos a partir do estado existente e não comprovam decisões ou revisões anteriores.
+Built with [faster-whisper](https://github.com/SYSTRAN/faster-whisper), an implementation of [OpenAI Whisper](https://openai.com/index/whisper/). Inspired by [Education-Victory/whisper-webui](https://github.com/Education-Victory/whisper-webui).

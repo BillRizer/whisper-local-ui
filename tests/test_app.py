@@ -260,6 +260,50 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(list(self.manager.upload_dir.iterdir()), [])
         asyncio.run(exercise())
 
+    def test_retry_failed_upload_and_cleanup(self):
+        original = self.manager.transcriber.transcribe
+        attempts = 0
+
+        def fail_once(*args, **kwargs):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise RuntimeError("falhou")
+            return original(*args, **kwargs)
+
+        self.manager.transcriber.transcribe = Mock(side_effect=fail_once)
+
+        async def exercise():
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url="http://test") as client:
+                with patch("whisper_ui.app.importlib.util.find_spec", return_value=True):
+                    response = await client.post("/api/jobs", files={"files": ("audio.mp3", b"test-audio", "audio/mpeg")})
+                job_id = response.json()[0]["id"]
+                self.manager.pending.join()
+                failed = (await client.get(f"/api/jobs/{job_id}")).json()
+                self.assertEqual(failed["status"], "error")
+                self.assertTrue(failed["retryable"])
+                self.assertEqual(len(list(self.manager.upload_dir.iterdir())), 1)
+                self.assertEqual((await client.post(f"/api/jobs/{job_id}/retry")).status_code, 202)
+                self.manager.pending.join()
+                self.assertEqual((await client.get(f"/api/jobs/{job_id}")).json()["status"], "done")
+                self.assertEqual((await client.post(f"/api/jobs/{job_id}/retry")).status_code, 409)
+                self.assertEqual((await client.post("/api/jobs/missing/retry")).status_code, 404)
+                self.assertEqual(list(self.manager.upload_dir.iterdir()), [])
+        asyncio.run(exercise())
+
+    def test_deleting_failed_upload_removes_input(self):
+        self.manager.transcriber.transcribe = Mock(side_effect=RuntimeError("falhou"))
+
+        async def exercise():
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url="http://test") as client:
+                with patch("whisper_ui.app.importlib.util.find_spec", return_value=True):
+                    response = await client.post("/api/jobs", files={"files": ("audio.mp3", b"test-audio", "audio/mpeg")})
+                job_id = response.json()[0]["id"]
+                self.manager.pending.join()
+                self.assertEqual((await client.delete(f"/api/jobs/{job_id}")).status_code, 204)
+                self.assertEqual(list(self.manager.upload_dir.iterdir()), [])
+        asyncio.run(exercise())
+
     def test_model_settings_api(self):
         async def exercise():
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url="http://test") as client:

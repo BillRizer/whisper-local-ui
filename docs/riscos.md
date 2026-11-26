@@ -4,7 +4,7 @@ Registro inicial em 2026-11-25; prioridades são avaliação técnica, não comp
 
 | Risco | Impacto e situação | Próxima ação sugerida |
 | --- | --- | --- |
-| API/MCP sem autenticação | Outros processos locais podem acessar dados e arquivos; exposição de rede amplia o risco. | Manter loopback; projetar autenticação e autorização antes de acesso remoto. |
+| API/MCP sem autenticação | Outros processos locais podem acessar dados e arquivos; `HOST=0.0.0.0` amplia o risco para clientes de rede. | Manter loopback por padrão, restringir acesso por firewall e projetar autenticação e autorização. |
 | Dados persistidos | Transcrições e exportações podem ser sensíveis; exclusão do histórico não remove exportações MCP. | Definir retenção, exclusão e permissões; documentar backups. |
 | Fila volátil | Reinício perde trabalhos pendentes e em execução. | Avaliar persistência e recuperação com critérios de produto. |
 | Uploads grandes e múltiplos | Até 20 GB por lote podem consumir disco; upload síncrono pode afetar responsividade. | Avaliar cotas, espaço livre e carga real. |

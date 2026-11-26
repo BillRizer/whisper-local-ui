@@ -13,9 +13,8 @@
   <div class="app-shell">
     <main class="app-layout">
       <div class="workspace-area">
-        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-controls="history-sidebar" aria-expanded="true" aria-label="Ocultar menu lateral">
+        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-controls="history-sidebar" aria-expanded="false" aria-label="Mostrar menu lateral">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
-          <span id="sidebar-toggle-label">Ocultar menu</span>
         </button>
         <div class="workspace-grid">
         <section class="panel input-panel" aria-labelledby="create-title">
@@ -121,7 +120,7 @@
             <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
             <span class="brand-name">whisper<span class="brand-dot">.</span><small>LOCAL</small></span>
           </a>
-          <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Fechar menu lateral">×</button>
+          <button id="sidebar-close" class="sidebar-close" type="button" aria-controls="history-sidebar" aria-label="Ocultar menu lateral"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
         </div>
         <div class="sidebar-status">
           <span class="privacy-note"><span class="privacy-dot"></span> Processamento local</span>

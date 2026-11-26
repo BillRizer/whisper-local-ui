@@ -19,8 +19,8 @@ Fora do escopo atual: colaboração multiusuário, autenticação, tradução pa
 
 1. Um upload válido retorna trabalho enfileirado; estado progride até conclusão ou erro consultável. Entradas inválidas são rejeitadas.
 2. Resultados concluídos podem ser recuperados após reinício e exportados nos formatos suportados; o usuário pode remover registros.
-3. O processamento remove uploads temporários ao terminar; arquivos originais indicados por MCP são preservados.
-4. O serviço inicia em loopback por padrão; MCP compartilha fila e histórico com a interface.
+3. Uploads temporários são removidos após sucesso, exclusão do trabalho ou reinício; falhas podem ser reenfileiradas enquanto o arquivo estiver disponível. Arquivos originais indicados por MCP são preservados.
+4. O serviço inicia em loopback por padrão e permite configurar explicitamente o endereço de escuta; MCP compartilha fila e histórico com a interface.
 5. A interface distingue transcrição de tradução para inglês e mostra progresso e falhas.
 
 Os testes automatizados cobrem parte desses critérios com backend simulado; gravação, precisão real, GPU e experiência visual exigem validação manual. Consulte `testes.md`.

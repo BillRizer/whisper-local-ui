@@ -1,73 +1,80 @@
-# Whisper Local — instruções para agentes de IA
+# Whisper Local — AI agent guide
 
-## O que esta aplicação faz
+## Overview
 
-Transcreve fala de arquivos de áudio ou vídeo para texto no idioma original e traduz fala para **inglês** com `faster-whisper`. Também permite gravar pelo microfone na interface web. O processamento ocorre no computador local, sem API externa ou chave; o primeiro uso de cada modelo pode baixar seus pesos do Hugging Face.
+Whisper Local transcribes speech from audio or video into the original language and translates speech into **English** using `faster-whisper`. It also supports microphone recording in the web interface. Processing runs locally without an external transcription API or API key. The first use of a model may download its weights from Hugging Face.
 
-Há três formas de acesso ao mesmo servidor: interface web, API HTTP e ferramentas MCP. Todas compartilham a mesma fila de processamento, o modelo carregado e o histórico.
+The web interface, HTTP API, and MCP tools share the same queue, loaded model, and history.
 
-## Iniciar e localizar o servidor
+## Start the server
 
-Na raiz deste projeto, em Linux, execute:
+On Linux, from the repository root:
 
 ```bash
 ./run.sh
 ```
 
-`run.sh` cria `.venv` e instala as dependências de `requirements.txt` quando necessário. Mantenha o processo aberto enquanto usar a UI ou o MCP. O servidor escuta apenas em `127.0.0.1`, na porta **7860** por padrão:
+The launcher creates `.venv` and installs `requirements.txt` when needed. Keep the process running while using the UI or MCP. By default, it listens on `127.0.0.1:7860`:
 
-| Recurso | Endereço padrão |
+| Resource | Default URL |
 | --- | --- |
-| Interface web | `http://127.0.0.1:7860/` |
-| MCP, transporte Streamable HTTP | `http://127.0.0.1:7860/mcp` |
-| Estado do sistema | `http://127.0.0.1:7860/api/system` |
-| Estado do modelo | `http://127.0.0.1:7860/api/model` |
+| Web interface | `http://127.0.0.1:7860/` |
+| MCP, Streamable HTTP | `http://127.0.0.1:7860/mcp` |
+| System status | `http://127.0.0.1:7860/api/system` |
+| Model status | `http://127.0.0.1:7860/api/model` |
 
-Para mudar a porta, inicie com `env PORT=7861 ./run.sh` e use a nova porta em todos os endereços. Para conferir se o servidor responde:
+Use `PORT=7861 ./run.sh` to change the port. Check that the server responds:
 
 ```bash
 curl -sS http://127.0.0.1:7860/api/system
 ```
 
-Para desenvolvimento assistido por agentes, consulte [AGENTS.md](AGENTS.md). As instruções do ambiente em uso também se aplicam.
+`HOST=0.0.0.0 ./run.sh` opts into listening on all IPv4 interfaces. The app has no authentication: network clients that reach the API can access results and submit or delete jobs, and the MCP tools can access files readable by the server when host validation permits. Keep the default loopback binding unless network access is explicitly requested, and restrict any network exposure with appropriate access controls.
 
-## Uso recomendado por uma IA: MCP
+For development, follow [AGENTS.md](AGENTS.md) and the instructions of your environment.
 
-Conecte o cliente MCP ao endpoint `http://127.0.0.1:7860/mcp`. Exemplos de registro neste ambiente:
+## Recommended agent workflow: MCP
+
+Connect an MCP client to `http://127.0.0.1:7860/mcp`. Examples:
 
 ```bash
 codex mcp add whisper-local --url http://127.0.0.1:7860/mcp
 claude mcp add --transport http whisper-local http://127.0.0.1:7860/mcp
 ```
 
-O cliente e o servidor precisam ter acesso ao **mesmo sistema de arquivos**: `transcribe_file` e `translate_file` recebem um caminho **absoluto**, legível pelo processo do servidor, como `/home/usuario/Videos/reuniao.mp4`. Um caminho que só existe em outro contêiner ou computador não funciona. O MCP não faz upload do arquivo.
+`transcribe_file` and `translate_file` accept an **absolute path readable by the server process**. A path available only in another container or computer will not work. MCP does not upload the file.
 
-Fluxo:
+1. Call `transcribe_file` for text in the original language or `translate_file` for English. Pass `path` and, optionally, `language` (default `auto`), `model` (default `small`), and `prompt` (context or vocabulary, up to 1,000 characters). Save the returned `job_id`.
+2. Call `wait_for_job(job_id, timeout_seconds=20)` until the status is `done` or `error`. Each call waits at most 30 seconds. `get_job` returns immediately. `queued` and `running` are not final states. Model downloads can take minutes; check `message` and `progress`.
+3. For a completed job, call `read_transcript(job_id)`. For long transcripts, repeat with `start=next_start` until `next_start` is `null`. `max_chars` is limited to 12,000 per call.
+4. To save a file, call `export_transcript(job_id, format="txt")`. Supported formats are `txt`, `srt`, `vtt`, and `json`. The tool returns the absolute path in the server's `data/exports/` directory by default.
+5. On `error`, inspect and report the `error` field from `get_job` or `wait_for_job`. Do not report the job as completed.
 
-1. Chame `transcribe_file` para texto no idioma original ou `translate_file` para texto em inglês. Passe `path`; opcionalmente `language` (padrão `auto`), `model` (padrão `small`) e `prompt` (contexto ou vocabulário, até 1.000 caracteres). Guarde o `job_id` retornado.
-2. Chame `wait_for_job(job_id, timeout_seconds=20)` até `status` ser `done` ou `error`. Cada chamada aceita no máximo 30 segundos. `get_job` fornece uma consulta imediata; `queued` e `running` ainda não são resultados finais. O primeiro download de um modelo pode demorar minutos; consulte `message` e `progress`.
-3. Se `done`, chame `read_transcript(job_id)` para obter o texto. Para textos longos, repita com `start=next_start` até `next_start` ser `null`. O limite de `max_chars` é 12.000 por chamada.
-4. Se precisar de arquivo, chame `export_transcript(job_id, format="txt")`. Os formatos são `txt`, `srt`, `vtt` e `json`; a ferramenta devolve o caminho absoluto do arquivo salvo em `data/exports/`.
-5. Se `error`, leia o campo `error` de `get_job`/`wait_for_job` e reporte a falha. Não trate o trabalho como concluído.
+Other tools: `list_jobs` lists history; `get_model_status` reports the loaded model, device, and unload settings; `unload_model` releases the model; `set_model_idle_timeout` sets the idle timeout in minutes (`0`, `1`, `5`, `10`, `15`, `30`, `60`; `0` disables it). An unload requested while jobs are active waits for the queue. The next job reloads the model from cache.
 
-Outras ferramentas: `list_jobs` lista o histórico; `get_model_status` informa o modelo carregado, dispositivo e tempo de descarregamento; `unload_model` libera o modelo da memória; `set_model_idle_timeout` configura o descarregamento automático (minutos: `0`, `1`, `5`, `10`, `15`, `30`, `60`; `0` desativa). Se houver trabalho ativo, o descarregamento espera a fila terminar. O próximo uso recarrega o modelo do cache.
+Models: `tiny`, `base`, `small`, `medium`, `large-v3`. Input languages: `auto`, `pt`, `en`, `es`, `fr`, `de`, `it`, `ja`, `zh`, `ko`, `ru`, `ar`, `hi`, `nl`, `pl`, `tr`, `uk`, `sv`, `id`, `vi`. Whisper translation targets **English only**.
 
-Modelos disponíveis: `tiny`, `base`, `small`, `medium`, `large-v3`. Idiomas aceitos: `auto`, `pt`, `en`, `es`, `fr`, `de`, `it`, `ja`, `zh`, `ko`, `ru`, `ar`, `hi`, `nl`, `pl`, `tr`, `uk`, `sv`, `id`, `vi`. A tradução do Whisper é sempre **para inglês**, não para um idioma de destino arbitrário.
+## Web interface and HTTP API
 
-## UI e API HTTP
+The interface accepts up to **20 files per batch**, supports microphone recording and task/language/model selection, and displays the queue and history. Users can copy results, retry eligible failed jobs, or download TXT, SRT, VTT, and JSON. Microphone recording requires browser permission and a secure context, such as localhost or HTTPS.
 
-Na UI, é possível enviar até **20 arquivos por lote**, gravar pelo microfone, escolher tarefa/idioma/modelo, acompanhar a fila, copiar o resultado e baixar TXT, SRT, VTT ou JSON. O histórico fica na barra lateral. A gravação exige permissão de microfone no navegador e acesso por `localhost`.
+For integrations without MCP:
 
-Para integração sem MCP, `POST /api/jobs` aceita `multipart/form-data` com campo `files` (um ou mais arquivos) e campos opcionais `task=transcribe|translate`, `language=auto`, `model=small` e `prompt`. A resposta HTTP `202` contém trabalhos enfileirados. Use `GET /api/jobs/{job_id}` para consultar o resultado, `GET /api/jobs/{job_id}/download?format=txt` para baixar um resultado e `GET /api/export?format=txt` para baixar um ZIP dos resultados concluídos. `DELETE /api/jobs/{job_id}` remove um registro do histórico.
+- `POST /api/jobs`: submit `multipart/form-data` with one or more `files` and optional `task=transcribe|translate`, `language=auto`, `model=small`, and `prompt`. HTTP `202` returns queued jobs.
+- `GET /api/jobs` and `GET /api/jobs/{job_id}`: inspect history and job details.
+- `POST /api/jobs/{job_id}/retry`: requeue a failed job when its input remains available.
+- `GET /api/jobs/{job_id}/download?format=txt`: download a completed result.
+- `GET /api/export?format=txt`: download a ZIP of completed results.
+- `DELETE /api/jobs/{job_id}`: remove a job from history.
 
-Extensões aceitas: MP3, MP4, M4A, M4V, WAV, FLAC, OGG, OGA, OPUS, WEBM, MOV, MKV, AVI, AAC, AIFF, WMA, MPEG e MPGA. O arquivo precisa conter áudio decodificável e ter até **1 GB**. A fila usa um trabalhador; vários trabalhos são processados em sequência.
+Accepted extensions: MP3, MP4, M4A, M4V, WAV, FLAC, OGG, OGA, OPUS, WEBM, MOV, MKV, AVI, AAC, AIFF, WMA, MPEG, and MPGA. Each file must contain decodable audio and be no larger than **1 GB**. A single worker processes jobs sequentially.
 
-## Particularidades operacionais
+## Operational notes
 
-- **GPU:** `WHISPER_DEVICE=auto` usa CUDA quando disponível e CPU caso contrário. Para exigir CUDA, inicie com `env WHISPER_DEVICE=cuda ./run.sh`. Verifique o dispositivo em `/api/system` e o dispositivo efetivamente usado no resultado do trabalho.
-- **Bibliotecas CUDA:** no Linux, prefira `run.sh`, que acrescenta ao `LD_LIBRARY_PATH` as bibliotecas CUDA instaladas pelo pip. Se aparecer `libcublas.so.12` ou `libcudnn.so.9` ausente, instale `requirements-gpu.txt` na `.venv` e reinicie pelo script: `.venv/bin/python -m pip install -r requirements-gpu.txt`. O driver NVIDIA também precisa estar funcional.
-- **Modelos grandes:** `large-v3` baixa cerca de 2,9 GB no primeiro uso e usa mais memória. A etapa de download e inicialização pode ser longa; acompanhe `message`/`progress` do trabalho antes de concluir que travou.
-- **Dados:** o padrão é `./data` (alterável por `WHISPER_DATA_DIR`). Resultados concluídos persistem em `data/results/`; configurações ficam em `data/settings.json`. Arquivos enviados pela UI são apagados após processamento. Arquivos fornecidos por caminho via MCP são preservados.
-- **Rede:** o serviço fica restrito a `127.0.0.1` por padrão. Mantenha o MCP local, pois ele pode ler arquivos aos quais o processo tem acesso. Depois que os pesos estão em cache, a transcrição e a tradução funcionam sem conexão com serviços externos.
+- **GPU:** `WHISPER_DEVICE=auto` selects CUDA when available and CPU otherwise. Use `WHISPER_DEVICE=cuda ./run.sh` to require CUDA. Check `/api/system` and the completed job's device.
+- **CUDA libraries:** On Linux, `run.sh` adds pip-installed CUDA libraries to `LD_LIBRARY_PATH`. If `libcublas.so.12` or `libcudnn.so.9` is missing, run `.venv/bin/python -m pip install -r requirements-gpu.txt` and restart with `./run.sh`. A working NVIDIA driver is also required.
+- **Large models:** `large-v3` downloads approximately 2.9 GB on first use and requires more memory. Check job `message` and `progress` before assuming a download or initialization has stalled.
+- **Data:** The default data directory is `./data`, configurable with `WHISPER_DATA_DIR`. Completed results persist in `data/results/` and settings in `data/settings.json`. Successful browser uploads are deleted; failed uploads remain available for retry until the job is deleted or the server restarts. Failed jobs do not persist across restarts. Files supplied by path through MCP are preserved.
+- **Network:** Transcription and translation can operate without external services once model weights are cached. Network access to the server is opt-in and has the security implications described above.
 
-Para detalhes de instalação e uso humano, consulte [README.md](README.md).
+For installation and user-facing instructions, see [README.md](README.md).
