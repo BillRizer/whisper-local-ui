@@ -143,6 +143,15 @@ def create_app(data_dir: Path | None = None, manager: JobManager | None = None) 
             raise
         return manager.submit(inputs, task=task, language=language, model=model, prompt=prompt)
 
+    @app.post("/api/jobs/{job_id}/retry", status_code=202)
+    async def retry_job(job_id: str):
+        outcome = manager.retry(job_id)
+        if outcome == "missing":
+            raise HTTPException(404, "Trabalho não encontrado")
+        if outcome == "unavailable":
+            raise HTTPException(409, "Não é possível tentar novamente este trabalho")
+        return {"status": "queued"}
+
     @app.delete("/api/jobs/{job_id}", status_code=204)
     async def delete_job(job_id: str):
         outcome = manager.remove(job_id)

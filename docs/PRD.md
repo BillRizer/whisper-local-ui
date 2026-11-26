@@ -19,8 +19,8 @@ Currently out of scope: multi-user collaboration, authentication, translation to
 
 1. A valid upload returns a queued job; its status progresses to completion or a retrievable error. Invalid inputs are rejected.
 2. Completed results can be retrieved after restart and exported in supported formats; users can remove records.
-3. Processing removes temporary uploads when finished; original files specified through MCP are preserved.
-4. The service binds to loopback by default; MCP shares the queue and history with the interface.
+3. Temporary uploads are removed after success, job deletion, or restart; failed jobs can be requeued while their input is available. Original files specified through MCP are preserved.
+4. The service binds to loopback by default and permits explicit configuration of the listening address; MCP shares the queue and history with the interface.
 5. The interface distinguishes transcription from translation into English and displays progress and failures.
 
 Automated tests cover some criteria with a simulated backend; recording, real recognition accuracy, GPU, and visual experience require manual validation. See `testes.md`.

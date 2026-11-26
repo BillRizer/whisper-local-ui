@@ -135,6 +135,8 @@ class JobManager:
         keys = ("id", "name", "size", "task", "language", "model", "status",
                 "message", "progress", "created_at", "updated_at", "error")
         item = {key: job.get(key) for key in keys}
+        item["retryable"] = (job.get("status") == "error" and bool(job.get("input_path"))
+                             and Path(job["input_path"]).is_file())
         if job.get("result"):
             item["duration"] = job["result"]["duration"]
             item["detected_language"] = job["result"]["detected_language"]
@@ -162,12 +164,24 @@ class JobManager:
                 return "missing"
             if job["status"] == "running":
                 return "running"
-            if job["status"] == "queued" and job.get("delete_input", False):
+            if job["status"] in {"queued", "error"} and job.get("delete_input", False):
                 path = Path(job["input_path"])
                 path.unlink(missing_ok=True)
             (self.result_dir / f"{job_id}.json").unlink(missing_ok=True)
             del self.jobs[job_id]
             return "removed"
+
+    def retry(self, job_id: str) -> str:
+        with self.lock:
+            job = self.jobs.get(job_id)
+            if not job:
+                return "missing"
+            if job["status"] != "error" or not Path(job["input_path"]).is_file():
+                return "unavailable"
+            job.update(status="queued", message="Na fila", progress=0.0,
+                       error=None, updated_at=now())
+            self.pending.put(("job", job_id))
+            return "queued"
 
     def _update(self, job_id: str, **changes) -> None:
         with self.lock:
@@ -239,7 +253,7 @@ class JobManager:
             self._update(job_id, status="error", message="Falha no processamento",
                          error=str(exc) or type(exc).__name__)
         finally:
-            if job["delete_input"]:
+            if job["delete_input"] and job["status"] == "done":
                 Path(arguments["path"]).unlink(missing_ok=True)
             with self.lock:
                 self.active_job_id = None

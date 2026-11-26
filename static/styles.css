@@ -15,14 +15,16 @@
 .history-count{display:inline-grid;place-items:center;background:#e7eee7;color:#5d8d6b;height:20px;min-width:20px;padding:0 5px;border-radius:6px;font-size:10px}
 .history-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px;scrollbar-width:thin}
 .history-empty{color:#9aaa9d;font-size:11px;line-height:1.6;text-align:center;padding:30px 14px}
-.job-row{display:grid;grid-template-columns:minmax(0,1fr) 26px;gap:2px;align-items:start;margin-bottom:2px;border-left:3px solid transparent;border-radius:8px;transition:background .15s}
+.job-row{display:flex;gap:2px;align-items:flex-start;margin-bottom:2px;border-left:3px solid transparent;border-radius:8px;transition:background .15s}
 .job-row:hover{background:#f7faf6}.job-row.active{background:#eff7f0;border-left-color:#438c67}
-.job-select{width:100%;min-width:0;padding:10px 4px 10px 10px;background:transparent;border:0;text-align:left;color:#34443a}
-.job-select:focus-visible,.job-delete:focus-visible{outline:2px solid #58a276;outline-offset:-2px}
+.job-select{flex:1;min-width:0;padding:10px 4px 10px 10px;background:transparent;border:0;text-align:left;color:#34443a}
+.job-select:focus-visible,.job-delete:focus-visible,.job-retry:focus-visible{outline:2px solid #58a276;outline-offset:-2px}
 .job-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .job-sub{font-size:10px;color:#94a297;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .job-state{font-size:10px;font-weight:750;color:#4a9568;margin-top:6px}.job-state.running{color:#5e8ba8}.job-state.queued{color:#a19265}.job-state.error{color:#bf655c}
 .job-delete{height:23px;width:23px;justify-self:center;margin-top:9px;border:0;background:transparent;color:#9eaea2;font-size:18px;line-height:1;border-radius:5px}.job-delete:hover{color:#bb5a50;background:#faeeee}
+.job-retry{flex:none;height:26px;width:26px;margin-top:8px;border:0;border-radius:5px;background:transparent;color:#397c57;font-size:21px;line-height:1}.job-retry:hover{background:#e5f3e9}.job-retry:disabled{opacity:.5}
+.job-delete{flex:none}
 .history-actions{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px;padding:12px;border-top:1px solid #edf1ec}
 .history-actions select{min-width:0;height:36px;border:1px solid #dce7dc;background:#fff;color:#577462;border-radius:8px;padding:0 5px;font-size:10px;font-weight:700}
 .secondary-button{min-width:0;border:1px solid #dce7dc;background:#fff;color:#336a4a;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px;font-weight:750;white-space:nowrap}
@@ -46,7 +48,8 @@
 .sidebar-top .brand-mark{width:31px;height:31px;flex:none}
 .sidebar-top .brand-name{font-size:19px;white-space:nowrap}
 .sidebar-top .brand-name small{font-size:8px;letter-spacing:1px;margin-left:5px}
-.sidebar-close{display:none;width:30px;height:30px;border:0;border-radius:7px;background:transparent;color:#557362;font-size:24px;line-height:1}
+.sidebar-close{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:7px;background:transparent;color:#557362}
+.sidebar-close svg{width:17px;height:17px}
 .sidebar-status{display:flex;flex-direction:column;align-items:flex-start;gap:11px;padding:16px 18px;border-bottom:1px solid #edf1ec}
 .sidebar-status .privacy-note{font-size:11px}
 .sidebar-status .device-pill{font-size:10px}

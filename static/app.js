@@ -10,12 +10,12 @@ function setSidebar(open, savePreference = false) {
   const sidebar = $("#history-sidebar");
   const toggle = $("#sidebar-toggle");
   $(".workspace-area").inert = open && mobileSidebar.matches;
-  if (!open && (sidebar.contains(document.activeElement) || $("#sidebar-backdrop") === document.activeElement)) toggle.focus();
+  const restoreFocus = !open && (sidebar.contains(document.activeElement) || $("#sidebar-backdrop") === document.activeElement);
   sidebar.hidden = !open;
+  toggle.hidden = open;
+  if (restoreFocus) toggle.focus();
   $(".app-layout").classList.toggle("sidebar-hidden", !open);
   toggle.setAttribute("aria-expanded", String(open));
-  toggle.setAttribute("aria-label", open ? "Ocultar menu lateral" : "Mostrar menu lateral");
-  $("#sidebar-toggle-label").textContent = open ? "Ocultar menu" : "Mostrar menu";
   $("#sidebar-backdrop").hidden = !open || !mobileSidebar.matches;
   document.body.classList.toggle("sidebar-drawer-open", open && mobileSidebar.matches);
   if (savePreference && !mobileSidebar.matches) {
@@ -216,7 +216,22 @@ function renderHistory() {
         await refreshJobs(); toast("Trabalho removido.");
       } catch (error) { toast(error.message, true); }
     };
-    row.append(open, remove); list.append(row);
+    row.append(open);
+    if (job.status === "error" && job.retryable) {
+      const retry = document.createElement("button"); retry.type = "button"; retry.className = "job-retry";
+      retry.dataset.jobId = job.id; retry.dataset.action = "retry";
+      retry.title = `Tentar novamente ${job.name}`; retry.setAttribute("aria-label", retry.title); retry.textContent = "↻";
+      retry.onclick = async () => {
+        retry.disabled = true;
+        try {
+          await request(`/api/jobs/${job.id}/retry`, { method: "POST" });
+          state.selectedId = job.id; state.detail = null;
+          await refreshJobs(); toast("Trabalho adicionado à fila novamente.");
+        } catch (error) { retry.disabled = false; toast(error.message, true); }
+      };
+      row.append(retry);
+    }
+    row.append(remove); list.append(row);
   }
   list.scrollTop = scrollTop;
   if (focused?.jobId) {
@@ -362,9 +377,9 @@ $("#batch-download").onclick = event => { if (!state.jobs.some(job => job.status
 $("#sidebar-toggle").onclick = () => {
   const open = $("#history-sidebar").hidden;
   setSidebar(open, true);
-  if (open && mobileSidebar.matches) $("#sidebar-close").focus();
+  if (open) $("#sidebar-close").focus();
 };
-$("#sidebar-close").onclick = () => setSidebar(false);
+$("#sidebar-close").onclick = () => setSidebar(false, true);
 $("#sidebar-backdrop").onclick = () => setSidebar(false);
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && mobileSidebar.matches && !$("#history-sidebar").hidden) setSidebar(false);

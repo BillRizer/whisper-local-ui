@@ -4,7 +4,7 @@ Initial register dated 2026-11-25; priorities are a technical assessment, not de
 
 | Risk | Impact and status | Suggested next action |
 | --- | --- | --- |
-| Unauthenticated API/MCP | Other local processes can access data and files; network exposure increases the risk. | Keep loopback; design authentication and authorization before remote access. |
+| Unauthenticated API/MCP | Other local processes can access data and files; `HOST=0.0.0.0` increases exposure to network clients. | Keep loopback as the default, restrict access with a firewall, and design authentication and authorization. |
 | Persisted data | Transcripts and exports may be sensitive; deleting history does not remove MCP exports. | Define retention, deletion, and permissions; document backups. |
 | Volatile queue | Restart loses pending and running jobs. | Evaluate persistence and recovery against product criteria. |
 | Large and multiple uploads | Up to 20 GB per batch can consume disk; synchronous upload may affect responsiveness. | Evaluate quotas, free space, and real load. |
