@@ -1,13 +1,13 @@
-# Riscos e pendências
+# Risks and outstanding work
 
-Registro inicial em 2026-11-25; prioridades são avaliação técnica, não compromissos de entrega.
+Initial register dated 2026-11-25; priorities are a technical assessment, not delivery commitments.
 
-| Risco | Impacto e situação | Próxima ação sugerida |
+| Risk | Impact and status | Suggested next action |
 | --- | --- | --- |
-| API/MCP sem autenticação | Outros processos locais podem acessar dados e arquivos; `HOST=0.0.0.0` amplia o risco para clientes de rede. | Manter loopback por padrão, restringir acesso por firewall e projetar autenticação e autorização. |
-| Dados persistidos | Transcrições e exportações podem ser sensíveis; exclusão do histórico não remove exportações MCP. | Definir retenção, exclusão e permissões; documentar backups. |
-| Fila volátil | Reinício perde trabalhos pendentes e em execução. | Avaliar persistência e recuperação com critérios de produto. |
-| Uploads grandes e múltiplos | Até 20 GB por lote podem consumir disco; upload síncrono pode afetar responsividade. | Avaliar cotas, espaço livre e carga real. |
-| Dependências com intervalos abertos | Instalações futuras podem variar e introduzir regressões. | Adotar lock reproduzível e política de atualização após escolher plataformas. |
-| Qualidade e confiabilidade | Testes simulados não medem reconhecimento, GPU ou usabilidade. | Definir conjunto de avaliação consentido e testes manuais reproduzíveis. |
-| Origem e revisão | Repositório sem histórico de commits; não há evidência de revisão anterior. | Registrar revisões e verificações daqui em diante. |
+| Unauthenticated API/MCP | Other local processes can access data and files; `HOST=0.0.0.0` increases exposure to network clients. | Keep loopback as the default, restrict access with a firewall, and design authentication and authorization. |
+| Persisted data | Transcripts and exports may be sensitive; deleting history does not remove MCP exports. | Define retention, deletion, and permissions; document backups. |
+| Volatile queue | Restart loses pending and running jobs. | Evaluate persistence and recovery against product criteria. |
+| Large and multiple uploads | Up to 20 GB per batch can consume disk; synchronous upload may affect responsiveness. | Evaluate quotas, free space, and real load. |
+| Dependencies with open ranges | Future installations may vary and introduce regressions. | Adopt a reproducible lock and update policy after choosing platforms. |
+| Quality and reliability | Simulated tests do not measure recognition, GPU, or usability. | Define a consented evaluation set and reproducible manual tests. |
+| Origin and review | The initial repository had no commit history; there is no evidence of earlier review. | Record reviews and verification from this point onward. |

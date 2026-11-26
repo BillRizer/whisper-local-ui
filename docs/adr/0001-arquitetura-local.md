@@ -1,15 +1,15 @@
-# ADR 0001 — Processamento local e fila compartilhada
+# ADR 0001 — Local processing and shared queue
 
-Estado: reconstruído em 2026-11-25 a partir da implementação existente; não há registro de quando ou por quem a decisão original foi tomada.
+Status: reconstructed on 2026-11-25 from the existing implementation; there is no record of when or by whom the original decision was made.
 
-## Contexto
+## Context
 
-A interface e o MCP precisam executar transcrição no computador e compartilhar estado, sem depender de uma API externa de transcrição.
+The interface and MCP need to run transcription on the computer and share state without relying on an external transcription API.
 
-## Decisão observada
+## Observed decision
 
-FastAPI hospeda UI, API e MCP no mesmo processo; um `JobManager` serializa trabalhos em um worker e reutiliza um modelo faster-whisper. Uploads são temporários; resultados concluídos são persistidos localmente. Pesos podem ser baixados na primeira utilização.
+FastAPI hosts the UI, API, and MCP in the same process; a `JobManager` serializes jobs in one worker and reuses a faster-whisper model. Uploads are temporary; completed results are persisted locally. Weights may be downloaded on first use.
 
-## Consequências e alternativas
+## Consequences and alternatives
 
-A solução simplifica a implantação e reduz contenção pelo modelo, mas limita throughput, perde a fila em reinícios e requer cuidado com dados locais. Uma fila persistente com processos separados facilitaria recuperação e escala, ao custo de infraestrutura e coordenação; não há evidência de que essa alternativa tenha sido formalmente avaliada originalmente. Mudanças nessa decisão exigem novo ADR e testes de migração e concorrência.
+This simplifies deployment and reduces contention for the model, but limits throughput, loses the queue on restart, and requires care with local data. A persistent queue with separate processes would make recovery and scaling easier at the cost of infrastructure and coordination; there is no evidence this alternative was formally evaluated originally. Changes to this decision require a new ADR and migration and concurrency tests.

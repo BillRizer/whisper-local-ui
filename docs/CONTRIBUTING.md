@@ -1,7 +1,7 @@
-# Contribuição e uso de IA
+# Contributing and AI use
 
-Descreva problema, escopo e critérios de aceite antes de mudanças relevantes. Leia `AGENTS.md`, PRD, arquitetura e riscos; use ADR para decisões difíceis de reverter ou que alterem limites e responsabilidades. Decisões reconstruídas não são evidência de discussão anterior.
+Describe the problem, scope, and acceptance criteria before significant changes. Read `AGENTS.md`, the PRD, architecture, and risks; use an ADR for decisions that are difficult to reverse or change boundaries and responsibilities. Reconstructed decisions are not evidence of prior discussion.
 
-Na PR, explique comportamento anterior e novo, decisões, testes executados e resultados, riscos e lacunas. Declare uso significativo de IA e o que foi revisado por uma pessoa, sem divulgar prompts, dados pessoais ou segredos. A pessoa responsável deve revisar código e saídas de ferramentas e assumir a decisão de integração. Não alegue revisão, aprovação ou teste que não ocorreu. Para defeitos, inclua reprodução e teste de regressão quando viável.
+In the PR, explain the old and new behavior, decisions, tests run and results, risks, and gaps. Disclose significant AI use and what a person reviewed, without revealing prompts, personal data, or secrets. The responsible person must review code and tool outputs and own the integration decision. Do not claim review, approval, or testing that did not happen. For defects, include reproduction steps and a regression test when feasible.
 
-Antes de integrar, verifique escopo, dados sensíveis, compatibilidade, testes e documentação afetada. A execução automática do CI complementa a revisão; não substitui testes de modelo real nem análise de segurança.
+Before integration, check scope, sensitive data, compatibility, tests, and affected documentation. Automated CI complements review; it does not replace tests with a real model or security analysis.
