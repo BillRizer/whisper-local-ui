@@ -1,18 +1,18 @@
-## Problema e mudança
+## Problem and change
 
-## Critérios de aceite
+## Acceptance criteria
 
-## Verificação
+## Verification
 
-- Comandos e resultados:
-- Não executado e motivo:
+- Commands and results:
+- Not run and why:
 
-## Riscos e documentação
+## Risks and documentation
 
-- Compatibilidade, privacidade e migração:
-- PRD/ADR/documentação atualizados ou não aplicáveis:
+- Compatibility, privacy, and migration:
+- PRD/ADR/documentation updated or not applicable:
 
-## Assistência por IA e revisão
+## AI assistance and review
 
-- Uso significativo de IA e verificação humana realizada:
-- Pontos que precisam de atenção do revisor:
+- Significant AI use and human verification performed:
+- Points requiring reviewer attention:

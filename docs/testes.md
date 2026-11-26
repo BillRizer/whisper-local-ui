@@ -1,12 +1,12 @@
-# Estratégia de verificação
+# Verification strategy
 
-Instale dependências de desenvolvimento e execute:
+Install development dependencies and run:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
-A suíte em `tests/test_app.py` exercita formatos, ciclo de vida do modelo, API, persistência e MCP com transcritor simulado. Não demonstra precisão da transcrição, funcionamento real de CUDA, download real de pesos, gravação no navegador ou segurança completa. Para mudanças nessas áreas, complemente com verificação manual apropriada e registre ambiente, passos e resultado na PR; não inclua áudio privado em fixtures. Para alterações visuais, confira também estados de carregamento e erro em navegador.
+The suite in `tests/test_app.py` exercises formats, model lifecycle, API, persistence, and MCP with a simulated transcriber. It does not demonstrate transcription accuracy, real CUDA operation, real model-weight downloads, browser recording, or complete security. For changes in these areas, add appropriate manual verification and record the environment, steps, and results in the PR; do not include private audio in fixtures. For visual changes, also check loading and error states in a browser.
 
-Critérios de regressão: rejeição de entrada inválida, preservação do arquivo MCP, limpeza de upload, exportação, persistência e comportamento da fila devem continuar sendo testados quando afetados. Alterações de segurança exigem teste da fronteira de confiança. O CI executa a suíte em CPU com dependências instaladas; não é prova de funcionamento de modelo real ou GPU.
+Regression criteria: invalid input rejection, MCP file preservation, upload cleanup, export, persistence, and queue behavior must remain tested when affected. Security changes require tests of the trust boundary. CI runs the suite on CPU with dependencies installed; it is not proof of real-model or GPU operation.
