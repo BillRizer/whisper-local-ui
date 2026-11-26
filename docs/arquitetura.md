@@ -1,19 +1,19 @@
-# Arquitetura e limites
+# Architecture and boundaries
 
-Estado observado em 2026-11-25; decisões reconstruídas estão em [ADR 0001](adr/0001-arquitetura-local.md).
+State observed on 2026-11-25; reconstructed decisions are in [ADR 0001](adr/0001-arquitetura-local.md).
 
 ```mermaid
 flowchart LR
-  U[Navegador] --> API[FastAPI]
-  C[Cliente MCP local] --> API
-  API --> Q[JobManager: fila em memória, um worker]
+  U[Browser] --> API[FastAPI]
+  C[Local MCP client] --> API
+  API --> Q[JobManager: in-memory queue, one worker]
   Q --> W[faster-whisper / CTranslate2]
-  Q --> D[(Uploads, resultados e configurações locais)]
-  W -. primeiro download .-> H[Cache / Hugging Face]
+  Q --> D[(Local uploads, results, and settings)]
+  W -. first download .-> H[Cache / Hugging Face]
 ```
 
-`app.py` serve interface e API; `mcp_server.py` usa o mesmo gerenciador; `jobs.py` coordena fila e persistência; `transcription.py` carrega o modelo e formata resultados; `media.py` valida arquivos. `static/` contém a interface. Resultados concluídos são gravados em JSON; fila, erros e trabalhos em andamento não são recuperados após reinício. Uploads remanescentes são removidos na inicialização. Exportações MCP ficam em `data/exports/` e não são removidas automaticamente ao excluir um trabalho.
+`app.py` serves the interface and API; `mcp_server.py` uses the same manager; `jobs.py` coordinates the queue and persistence; `transcription.py` loads the model and formats results; `media.py` validates files. `static/` contains the interface. Completed results are stored as JSON; the queue, errors, and in-progress jobs are not recovered after restart. Leftover uploads are removed on startup. MCP exports remain in `data/exports/` and are not automatically removed when a job is deleted.
 
-O processo local é o limite de confiança: não há autenticação da API/MCP. Qualquer cliente que consiga acessá-lo pode enviar trabalhos e, via MCP, pedir leitura de arquivos acessíveis ao processo. Loopback reduz exposição na rede, mas não isola outros processos locais. Não exponha o servidor à rede sem projetar autenticação, autorização e proteção contra abuso. Resultados e exportações podem conter dados sensíveis; permissões e backup dependem do ambiente.
+The local process is the trust boundary: the API/MCP has no authentication. Any client able to access it can submit jobs and, through MCP, request access to files readable by the process. Loopback reduces network exposure but does not isolate other local processes. Do not expose the server to the network without designing authentication, authorization, and abuse protection. Results and exports can contain sensitive data; permissions and backups depend on the environment.
 
-A fila em memória e o modelo compartilhado pressupõem um único processo de aplicação. Não iniciar múltiplos workers contra a mesma pasta de dados sem redesenhar coordenação, recuperação e escrita concorrente. Falhas abruptas podem deixar temporários; não há garantia transacional entre todas as etapas.
+The in-memory queue and shared model assume a single application process. Do not start multiple workers against the same data directory without redesigning coordination, recovery, and concurrent writes. Abrupt failures can leave temporary files; there is no transactional guarantee across all steps.

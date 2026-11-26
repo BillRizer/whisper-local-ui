@@ -1,30 +1,30 @@
 # PRD — Whisper Local
 
-Estado: reconstruído a partir do código e README existentes em 2026-11-25; não representa aprovação histórica. Responsável e métricas de produto ainda não definidos.
+Status: reconstructed from the existing code and README on 2026-11-25; this does not represent historical approval. Product owner and metrics have not yet been defined.
 
-## Problema e público
+## Problem and audience
 
-Pessoas e agentes locais precisam converter fala de áudio ou vídeo em texto sem enviar o conteúdo a uma API de transcrição. O usuário opera a interface web; um cliente de automação pode usar MCP ou HTTP no mesmo computador.
+People and local agents need to convert speech from audio or video into text without sending content to a transcription API. Users operate the web interface; automation clients can use MCP or HTTP on the same computer.
 
-## Objetivo e escopo atual
+## Goal and current scope
 
-- Transcrever no idioma original ou traduzir fala para inglês, usando faster-whisper localmente.
-- Aceitar lote de até 20 uploads de até 1 GB cada, gravação no navegador e caminho local via MCP.
-- Acompanhar uma fila sequencial e consultar resultados, incluindo após reinício quando concluídos.
-- Exportar TXT, SRT, VTT e JSON; controlar descarregamento do modelo.
+- Transcribe in the original language or translate speech into English using faster-whisper locally.
+- Accept batches of up to 20 uploads of up to 1 GB each, browser microphone recordings, and local paths through MCP.
+- Track a sequential queue and retrieve results, including completed results after restart.
+- Export TXT, SRT, VTT, and JSON; control model unloading.
 
-Fora do escopo atual: colaboração multiusuário, autenticação, tradução para destinos arbitrários e garantia de precisão de reconhecimento. O primeiro uso pode baixar pesos de modelo; processamento local não significa ausência total de tráfego de rede.
+Currently out of scope: multi-user collaboration, authentication, translation to arbitrary target languages, and guaranteed recognition accuracy. First use may download model weights; local processing does not imply no network traffic at all.
 
-## Critérios de aceite
+## Acceptance criteria
 
-1. Um upload válido retorna trabalho enfileirado; estado progride até conclusão ou erro consultável. Entradas inválidas são rejeitadas.
-2. Resultados concluídos podem ser recuperados após reinício e exportados nos formatos suportados; o usuário pode remover registros.
-3. O processamento remove uploads temporários ao terminar; arquivos originais indicados por MCP são preservados.
-4. O serviço inicia em loopback por padrão; MCP compartilha fila e histórico com a interface.
-5. A interface distingue transcrição de tradução para inglês e mostra progresso e falhas.
+1. A valid upload returns a queued job; its status progresses to completion or a retrievable error. Invalid inputs are rejected.
+2. Completed results can be retrieved after restart and exported in supported formats; users can remove records.
+3. Processing removes temporary uploads when finished; original files specified through MCP are preserved.
+4. The service binds to loopback by default; MCP shares the queue and history with the interface.
+5. The interface distinguishes transcription from translation into English and displays progress and failures.
 
-Os testes automatizados cobrem parte desses critérios com backend simulado; gravação, precisão real, GPU e experiência visual exigem validação manual. Consulte `testes.md`.
+Automated tests cover some criteria with a simulated backend; recording, real recognition accuracy, GPU, and visual experience require manual validation. See `testes.md`.
 
-## Questões abertas
+## Open questions
 
-Definir público prioritário, metas mensuráveis de qualidade/tempo, política de retenção, plataformas suportadas e critérios de acessibilidade com o responsável pelo produto. Não há dados de usuários ou métricas de sucesso disponíveis neste repositório.
+Define the priority audience, measurable quality and time targets, retention policy, supported platforms, and accessibility criteria with the product owner. No user data or success metrics are available in this repository.
